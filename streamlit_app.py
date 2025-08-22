@@ -201,7 +201,7 @@ st.title("🚚 Транспортная схема доставки матери
 col1, col2 = st.columns([3, 1])
 with col2:
     st.link_button(
-        "Как пользоваться программой", 
+        "Ссылка на github",
         "https://github.com/remeenemee/transport_scheme",
         use_container_width=True,
         type="primary"
