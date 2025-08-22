@@ -36,4 +36,3 @@
   tenacity
   pillow
   xlsxwriter
-  tkinter (обычно входит в стандартную поставку Python)
