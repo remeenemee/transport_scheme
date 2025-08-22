@@ -1,0 +1,9 @@
+streamlit>=1.25.0
+folium>=0.14.0
+streamlit-folium>=0.15.0
+pandas>=1.5.3
+geopy>=2.3.0
+tenacity>=8.2.2
+openrouteservice>=2.3.3
+xlsxwriter>=3.1.0
+Pillow>=9.5.0
