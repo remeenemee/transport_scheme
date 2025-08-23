@@ -10,8 +10,6 @@ from utils import (
     MATERIAL_COLORS, AVAILABLE_COLORS, MATERIALS
 )
 from export_utils import export_to_excel, save_map_screenshot
-import tkinter as tk
-from tkinter import filedialog
 
 # --- Настройка страницы ---
 st.set_page_config(layout="wide", page_title="Модуль программы для работы с базой поставщиков", page_icon="🏭")
@@ -65,51 +63,46 @@ st.title("Модуль программы для работы с базой по
 # Функция для загрузки поставщиков из CSV файла
 def load_suppliers():
     try:
-        # Открываем окно выбора файла
-        root = tk.Tk()
-        root.withdraw()  # Скрываем главное окно Tkinter
-        file_path = filedialog.askopenfilename(
-            title="Выберите файл базы данных (CSV)",
-            filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
+        # Используем Streamlit для загрузки файла
+        uploaded_file = st.file_uploader(
+            "Загрузите файл базы данных (CSV)",
+            type=["csv"],
+            help="Выберите CSV файл с данными поставщиков"
         )
 
-        if not file_path:
-            st.warning("⚠️ Файл не выбран. Пожалуйста, выберите файл базы данных.")
+        if uploaded_file is None:
+            st.warning("⚠️ Файл не выбран. Пожалуйста, загрузите файл базы данных.")
             return None, []
 
-        if os.path.exists(file_path):
-            df = pd.read_csv(file_path)
-            # Обработка данных
-            df = df.fillna('')
-            # Извлечение координат
-            df['lat'] = 0.0
-            df['lon'] = 0.0
+        # Читаем CSV файл
+        df = pd.read_csv(uploaded_file)
+        df = df.fillna('')  # Заполняем пустые значения
 
-            # Парсинг координат из столбца G ("Координаты")
-            for idx, row in df.iterrows():
-                if row['Координаты'] and isinstance(row['Координаты'], str):
-                    try:
-                        lat, lon = map(float, row['Координаты'].split(','))
-                        df.at[idx, 'lat'] = lat
-                        df.at[idx, 'lon'] = lon
-                    except:
-                        pass
+        # Извлечение координат
+        df['lat'] = 0.0
+        df['lon'] = 0.0
 
-            # Создаем информационное поле
-            df['info'] = df.apply(lambda row: f"{row['Название компании']}\nИНН: {row['ИНН']}\nАдрес: {row['Адрес компании']}", axis=1)
+        # Парсинг координат из столбца "Координаты"
+        for idx, row in df.iterrows():
+            if row['Координаты'] and isinstance(row['Координаты'], str):
+                try:
+                    lat, lon = map(float, row['Координаты'].split(','))
+                    df.at[idx, 'lat'] = lat
+                    df.at[idx, 'lon'] = lon
+                except:
+                    pass
 
-            # Извлечение уникальных ОКВЭД для фильтрации
-            okved_list = df['Главный ОКВЭД (название)'].unique().tolist()
-            okved_list = [x for x in okved_list if x]
-            okved_list.sort()
+        # Создаем информационное поле
+        df['info'] = df.apply(lambda row: f"{row['Название компании']}\nИНН: {row['ИНН']}\nАдрес: {row['Адрес компании']}", axis=1)
 
-            log_info(st.session_state, f"Загружено {len(df)} поставщиков из CSV файла")
+        # Извлечение уникальных ОКВЭД для фильтрации
+        okved_list = df['Главный ОКВЭД (название)'].unique().tolist()
+        okved_list = [x for x in okved_list if x]
+        okved_list.sort()
 
-            return df, okved_list
-        else:
-            log_error(st.session_state, f"Файл {file_path} не найден")
-            st.error("❌ Указанный файл не найден. Проверьте путь и попробуйте снова.")
-            return None, []
+        log_info(st.session_state, f"Загружено {len(df)} поставщиков из CSV файла")
+
+        return df, okved_list
     except Exception as e:
         log_error(st.session_state, f"Ошибка при загрузке CSV файла: {str(e)}")
         st.error(f"❌ Ошибка при загрузке файла: {str(e)}")
@@ -621,51 +614,46 @@ def display_supplier_gui():
     # Функция для загрузки поставщиков из CSV файла
     def load_suppliers():
         try:
-            # Открываем окно выбора файла
-            root = tk.Tk()
-            root.withdraw()  # Скрываем главное окно Tkinter
-            file_path = filedialog.askopenfilename(
-                title="Выберите файл базы данных (CSV)",
-                filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
+            # Используем Streamlit для загрузки файла
+            uploaded_file = st.file_uploader(
+                "Загрузите файл базы данных (CSV)",
+                type=["csv"],
+                help="Выберите CSV файл с данными поставщиков"
             )
 
-            if not file_path:
-                st.warning("⚠️ Файл не выбран. Пожалуйста, выберите файл базы данных.")
+            if uploaded_file is None:
+                st.warning("⚠️ Файл не выбран. Пожалуйста, загрузите файл базы данных.")
                 return None, []
 
-            if os.path.exists(file_path):
-                df = pd.read_csv(file_path)
-                # Обработка данных
-                df = df.fillna('')
-                # Извлечение координат
-                df['lat'] = 0.0
-                df['lon'] = 0.0
+            # Читаем CSV файл
+            df = pd.read_csv(uploaded_file)
+            df = df.fillna('')  # Заполняем пустые значения
 
-                # Парсинг координат из столбца G ("Координаты")
-                for idx, row in df.iterrows():
-                    if row['Координаты'] and isinstance(row['Координаты'], str):
-                        try:
-                            lat, lon = map(float, row['Координаты'].split(','))
-                            df.at[idx, 'lat'] = lat
-                            df.at[idx, 'lon'] = lon
-                        except:
-                            pass
+            # Извлечение координат
+            df['lat'] = 0.0
+            df['lon'] = 0.0
 
-                # Создаем информационное поле
-                df['info'] = df.apply(lambda row: f"{row['Название компании']}\nИНН: {row['ИНН']}\nАдрес: {row['Адрес компании']}", axis=1)
+            # Парсинг координат из столбца "Координаты"
+            for idx, row in df.iterrows():
+                if row['Координаты'] and isinstance(row['Координаты'], str):
+                    try:
+                        lat, lon = map(float, row['Координаты'].split(','))
+                        df.at[idx, 'lat'] = lat
+                        df.at[idx, 'lon'] = lon
+                    except:
+                        pass
 
-                # Извлечение уникальных ОКВЭД для фильтрации
-                okved_list = df['Главный ОКВЭД (название)'].unique().tolist()
-                okved_list = [x for x in okved_list if x]
-                okved_list.sort()
+            # Создаем информационное поле
+            df['info'] = df.apply(lambda row: f"{row['Название компании']}\nИНН: {row['ИНН']}\nАдрес: {row['Адрес компании']}", axis=1)
 
-                log_info(st.session_state, f"Загружено {len(df)} поставщиков из CSV файла")
+            # Извлечение уникальных ОКВЭД для фильтрации
+            okved_list = df['Главный ОКВЭД (название)'].unique().tolist()
+            okved_list = [x for x in okved_list if x]
+            okved_list.sort()
 
-                return df, okved_list
-            else:
-                log_error(st.session_state, f"Файл {file_path} не найден")
-                st.error("❌ Указанный файл не найден. Проверьте путь и попробуйте снова.")
-                return None, []
+            log_info(st.session_state, f"Загружено {len(df)} поставщиков из CSV файла")
+
+            return df, okved_list
         except Exception as e:
             log_error(st.session_state, f"Ошибка при загрузке CSV файла: {str(e)}")
             st.error(f"❌ Ошибка при загрузке файла: {str(e)}")
