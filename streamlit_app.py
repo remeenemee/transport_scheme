@@ -146,143 +146,147 @@ if not st.session_state.ors_api_key:
 display_debug_sidebar(st.session_state)
 
 # --- Основной интерфейс ---
-st.header("1. Добавьте поставщика")
+if 'page' not in st.session_state:
+    st.session_state.page = "manual"  # Устанавливаем страницу по умолчанию
 
-col1, col2 = st.columns(2)
+if st.session_state.page == "manual":
+    st.header("➕ Добавление поставщиков вручную")
 
-with col1:
-    use_custom_material = st.checkbox("Использовать собственное наименование материала", key="custom_mat_check")
+    col1, col2 = st.columns(2)
 
-    if use_custom_material:
-        material = st.text_input("Наименование материала", key="custom_mat")
-    else:
-        material = st.selectbox("Наименование материала", MATERIALS, key="mat")
+    with col1:
+        use_custom_material = st.checkbox("Использовать собственное наименование материала", key="custom_mat_check")
 
-    color_name = st.selectbox("Цвет линии маршрута", list(AVAILABLE_COLORS.keys()), key="color_select")
-    selected_color = AVAILABLE_COLORS[color_name]
+        if use_custom_material:
+            material = st.text_input("Наименование материала", key="custom_mat")
+        else:
+            material = st.selectbox("Наименование материала", MATERIALS, key="mat")
 
-    # Предпросмотр выбранного цвета
-    st.markdown(f"<div style='background-color: {selected_color}; width: 100%; height: 20px; border-radius: 5px;'></div>", unsafe_allow_html=True)
+        color_name = st.selectbox("Цвет линии маршрута", list(AVAILABLE_COLORS.keys()), key="color_select")
+        selected_color = AVAILABLE_COLORS[color_name]
 
-    work_type = st.text_input(
-        "Вид работ",
-        value="Устройство дорожной одежды",
-        help="Например: Устройство насыпи, основания, подстилающего слоя"
-    )
-    supplier_name = st.text_input(
-        "Наименование поставщика",
-        value="ГПКО \"ДЭП №2\"",
-        help="Например: ООО \"САНТЕРМО\""
-    )
-    supplier_address = st.text_area(
-        "Адрес поставщика",
-        value="Правдинский район, город Правдинск, Электрическая ул., д.1",
-        height=100
-    )
+        # Предпросмотр выбранного цвета
+        st.markdown(f"<div style='background-color: {selected_color}; width: 100%; height: 20px; border-radius: 5px;'></div>", unsafe_allow_html=True)
 
-with col2:
-    st.subheader("📍 Адрес объекта (место размещения)")
-    use_object_coords = st.checkbox("Ввести координаты объекта вручную")
-    if use_object_coords:
-        obj_coord_input = st.text_input("Координаты объекта (широта, долгота)", "")
-    else:
-        object_address = st.text_input(
-            "Адрес объекта",
-            value="Калининградская обл., Гурьевский район, пос. Невское, ул. Гагарина, д. ЗД. 229"
+        work_type = st.text_input(
+            "Вид работ",
+            value="Устройство дорожной одежды",
+            help="Например: Устройство насыпи, основания, подстилающего слоя"
+        )
+        supplier_name = st.text_input(
+            "Наименование поставщика",
+            value="ГПКО \"ДЭП №2\"",
+            help="Например: ООО \"САНТЕРМО\""
+        )
+        supplier_address = st.text_area(
+            "Адрес поставщика",
+            value="Правдинский район, город Правдинск, Электрическая ул., д.1",
+            height=100
         )
 
-# --- Кнопка добавления ---
-if st.button("➕ Добавить поставщика"):
-    log_info(st.session_state, "Начало процесса добавления поставщика")
+    with col2:
+        st.subheader("📍 Адрес объекта (место размещения)")
+        use_object_coords = st.checkbox("Ввести координаты объекта вручную")
+        if use_object_coords:
+            obj_coord_input = st.text_input("Координаты объекта (широта, долгота)", "")
+        else:
+            object_address = st.text_input(
+                "Адрес объекта",
+                value="Калининградская обл., Гурьевский район, пос. Невское, ул. Гагарина, д. ЗД. 229"
+            )
 
-    # Геокодирование объекта
-    if use_object_coords:
-        try:
-            lat, lon = map(float, [x.strip() for x in obj_coord_input.split(",")])
-            if -90 <= lat <= 90 and -180 <= lon <= 180:
-                obj_coords = (lat, lon)
-                obj_full_addr = f"Координаты: {lat:.5f}, {lon:.5f}"
-                log_info(st.session_state, f"Введены координаты объекта вручную: {obj_coords}")
-            else:
-                error_msg = "Координаты объекта вне допустимого диапазона."
-                log_error(st.session_state, error_msg)
-                st.error(error_msg)
+    # --- Кнопка добавления ---
+    if st.button("➕ Добавить поставщика"):
+        log_info(st.session_state, "Начало процесса добавления поставщика")
+
+        # Геокодирование объекта
+        if use_object_coords:
+            try:
+                lat, lon = map(float, [x.strip() for x in obj_coord_input.split(",")])
+                if -90 <= lat <= 90 and -180 <= lon <= 180:
+                    obj_coords = (lat, lon)
+                    obj_full_addr = f"Координаты: {lat:.5f}, {lon:.5f}"
+                    log_info(st.session_state, f"Введены координаты объекта вручную: {obj_coords}")
+                else:
+                    error_msg = "Координаты объекта вне допустимого диапазона."
+                    log_error(st.session_state, error_msg)
+                    st.error(error_msg)
+                    st.stop()
+            except Exception as e:
+                error_msg = "Некорректный формат координат объекта"
+                log_error(st.session_state, error_msg, details=str(e))
+                st.error("Введите корректные координаты объекта: например, 54.7100, 20.4800")
                 st.stop()
-        except Exception as e:
-            error_msg = "Некорректный формат координат объекта"
-            log_error(st.session_state, error_msg, details=str(e))
-            st.error("Введите корректные координаты объекта: например, 54.7100, 20.4800")
-            st.stop()
-    else:
-        obj_coords, obj_full_addr = geocode_address_cached(st.session_state, object_address)
-        if obj_coords is None:
-            error_msg = f"Не удалось определить координаты объекта: {object_address}"
-            log_error(st.session_state, error_msg)
-            st.error("Не удалось определить координаты объекта. Проверьте адрес или введите координаты вручную.")
-            st.stop()
-
-    # Геокодирование поставщика
-    use_supplier_coords = st.checkbox("Ввести координаты поставщика вручную", key="supp_coords")
-    if use_supplier_coords:
-        supp_coord_input = st.text_input("Координаты поставщика (широта, долгота)", key="supp_input")
-        try:
-            lat, lon = map(float, [x.strip() for x in supp_coord_input.split(",")])
-            if -90 <= lat <= 90 and -180 <= lon <= 180:
-                sup_coords = (lat, lon)
-                sup_full_addr = f"Координаты: {lat:.5f}, {lon:.5f}"
-                log_info(st.session_state, f"Введены координаты поставщика вручную: {sup_coords}")
-            else:
-                error_msg = "Координаты поставщика вне допустимого диапазона."
+        else:
+            obj_coords, obj_full_addr = geocode_address_cached(st.session_state, object_address)
+            if obj_coords is None:
+                error_msg = f"Не удалось определить координаты объекта: {object_address}"
                 log_error(st.session_state, error_msg)
-                st.error(error_msg)
+                st.error("Не удалось определить координаты объекта. Проверьте адрес или введите координаты вручную.")
                 st.stop()
-        except Exception as e:
-            error_msg = "Некорректный формат координат поставщика"
-            log_error(st.session_state, error_msg, details=str(e))
-            st.error("Введите корректные координаты поставщика: например, 54.7100, 20.4800")
-            st.stop()
-    else:
-        sup_coords, sup_full_addr = geocode_address_cached(st.session_state, supplier_address)
-        if sup_coords is None:
-            error_msg = f"Не удалось определить координаты поставщика: {supplier_address}"
-            log_error(st.session_state, error_msg)
-            st.error("Не удалось определить координаты поставщика. Проверьте адрес или введите координаты вручную.")
-            st.stop()
 
-    # Расчёт маршрута по дорогам
-    log_info(st.session_state, "Начало расчёта маршрута")
-    route_coords, road_distance = get_route_ors(st.session_state, ors_client, sup_coords, obj_coords)
+        # Геокодирование поставщика
+        use_supplier_coords = st.checkbox("Ввести координаты поставщика вручную", key="supp_coords")
+        if use_supplier_coords:
+            supp_coord_input = st.text_input("Координаты поставщика (широта, долгота)", key="supp_input")
+            try:
+                lat, lon = map(float, [x.strip() for x in supp_coord_input.split(",")])
+                if -90 <= lat <= 90 and -180 <= lon <= 180:
+                    sup_coords = (lat, lon)
+                    sup_full_addr = f"Координаты: {lat:.5f}, {lon:.5f}"
+                    log_info(st.session_state, f"Введены координаты поставщика вручную: {sup_coords}")
+                else:
+                    error_msg = "Координаты поставщика вне допустимого диапазона."
+                    log_error(st.session_state, error_msg)
+                    st.error(error_msg)
+                    st.stop()
+            except Exception as e:
+                error_msg = "Некорректный формат координат поставщика"
+                log_error(st.session_state, error_msg, details=str(e))
+                st.error("Введите корректные координаты поставщика: например, 54.7100, 20.4800")
+                st.stop()
+        else:
+            sup_coords, sup_full_addr = geocode_address_cached(st.session_state, supplier_address)
+            if sup_coords is None:
+                error_msg = f"Не удалось определить координаты поставщика: {supplier_address}"
+                log_error(st.session_state, error_msg)
+                st.error("Не удалось определить координаты поставщика. Проверьте адрес или введите координаты вручную.")
+                st.stop()
 
-    # Сохранение
-    idx = len(st.session_state.delivery_data) + 1
-    st.session_state.delivery_data.append({
-        "№ п/п": idx,
-        "Наименование материала": material,
-        "% от общей потребности": 100,
-        "Вид работ": work_type,
-        "Наименование поставщика": supplier_name,
-        "Адрес": sup_full_addr,
-        "Вид \"франко\" для данного материала": "-",
-        "Железнодорожные перевозки %": "-",
-        "Станции назначения, на которую прибывает материал": obj_full_addr,
-        "Расстояние перевозки, км": road_distance,
-        "Автомобильные перевозки %": 100,
-        "Средняя дальность возки, км": road_distance,
-        "Цвет": selected_color,
-        "supplier_coords": sup_coords,
-        "object_coords": obj_coords,
-        "route_coords": route_coords
-    })
+        # Расчёт маршрута по дорогам
+        log_info(st.session_state, "Начало расчёта маршрута")
+        route_coords, road_distance = get_route_ors(st.session_state, ors_client, sup_coords, obj_coords)
 
-    log_info(st.session_state, f"Поставщик добавлен успешно: {supplier_name}, расстояние: {road_distance} км")
+        # Сохранение
+        idx = len(st.session_state.delivery_data) + 1
+        st.session_state.delivery_data.append({
+            "№ п/п": idx,
+            "Наименование материала": material,
+            "% от общей потребности": 100,
+            "Вид работ": work_type,
+            "Наименование поставщика": supplier_name,
+            "Адрес": sup_full_addr,
+            "Вид \"франко\" для данного материала": "-",
+            "Железнодорожные перевозки %": "-",
+            "Станции назначения, на которую прибывает материал": obj_full_addr,
+            "Расстояние перевозки, км": road_distance,
+            "Автомобильные перевозки %": 100,
+            "Средняя дальность возки, км": road_distance,
+            "Цвет": selected_color,
+            "supplier_coords": sup_coords,
+            "object_coords": obj_coords,
+            "route_coords": route_coords
+        })
 
-    success_msg = f"✅ Поставщик «{supplier_name}» добавлен! Расстояние "
-    if route_coords:
-        success_msg += f"по дорогам: {road_distance} км"
-    else:
-        success_msg += f"по прямой: {road_distance} км (маршрут по дорогам недоступен)"
+        log_info(st.session_state, f"Поставщик добавлен успешно: {supplier_name}, расстояние: {road_distance} км")
 
-    st.success(success_msg)
+        success_msg = f"✅ Поставщик «{supplier_name}» добавлен! Расстояние "
+        if route_coords:
+            success_msg += f"по дорогам: {road_distance} км"
+        else:
+            success_msg += f"по прямой: {road_distance} км (маршрут по дорогам недоступен)"
+
+        st.success(success_msg)
 
 # --- Отображение результатов ---
 st.header("📋 Ведомость доставки материалов")
