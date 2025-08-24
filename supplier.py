@@ -63,19 +63,18 @@ st.title("Модуль программы для работы с базой по
 # Функция для загрузки поставщиков из CSV файла
 def load_suppliers():
     try:
-        # Используем Streamlit для загрузки файла
-        uploaded_file = st.file_uploader(
-            "Загрузите файл базы данных (CSV)",
-            type=["csv"],
-            help="Выберите CSV файл с данными поставщиков"
-        )
-
-        if uploaded_file is None:
-            st.warning("⚠️ Файл не выбран. Пожалуйста, загрузите файл базы данных.")
+        # Получаем ссылку на Google Drive из secrets
+        try:
+            google_drive_url = st.secrets["GOOGLE_DRIVE_SUPPLIERS_URL"]
+        except KeyError:
+            st.error("❌ Не найден GOOGLE_DRIVE_SUPPLIERS_URL в настройках secrets.toml")
+            st.info("💡 Добавьте GOOGLE_DRIVE_SUPPLIERS_URL = 'ваша-ссылка' в файл .streamlit/secrets.toml")
             return None, []
-
-        # Читаем CSV файл
-        df = pd.read_csv(uploaded_file)
+        
+        st.info("📥 Загружаем данные поставщиков с Google Drive...")
+        
+        # Читаем CSV файл напрямую с Google Drive
+        df = pd.read_csv(google_drive_url)
         df = df.fillna('')  # Заполняем пустые значения
 
         # Извлечение координат
@@ -84,7 +83,7 @@ def load_suppliers():
 
         # Парсинг координат из столбца "Координаты"
         for idx, row in df.iterrows():
-            if row['Координаты'] and isinstance(row['Координаты'], str):
+            if 'Координаты' in row and row['Координаты'] and isinstance(row['Координаты'], str):
                 try:
                     lat, lon = map(float, row['Координаты'].split(','))
                     df.at[idx, 'lat'] = lat
@@ -100,12 +99,17 @@ def load_suppliers():
         okved_list = [x for x in okved_list if x]
         okved_list.sort()
 
-        log_info(st.session_state, f"Загружено {len(df)} поставщиков из CSV файла")
+        # Сохраняем DataFrame в сессии
+        st.session_state.suppliers_df = df
+
+        log_info(st.session_state, f"Загружено {len(df)} поставщиков из Google Drive")
+        st.success(f"✅ Успешно загружено {len(df)} поставщиков с Google Drive!")
 
         return df, okved_list
     except Exception as e:
-        log_error(st.session_state, f"Ошибка при загрузке CSV файла: {str(e)}")
-        st.error(f"❌ Ошибка при загрузке файла: {str(e)}")
+        log_error(st.session_state, f"Ошибка при загрузке CSV файла с Google Drive: {str(e)}")
+        st.error(f"❌ Ошибка при загрузке файла с Google Drive: {str(e)}")
+        st.error("Проверьте доступность ссылки и подключение к интернету.")
         return None, []
 
 # Обработчик выбора поставщика на карте
@@ -236,13 +240,13 @@ with col1:
     # Загрузка данных поставщиков
     st.header("2.Загрузите данные поставщиков")
 
-    if st.button("📂 Загрузить CSV файл поставщиков"):
+    if st.button("📂 Загрузить данные поставщиков с Google Drive"):
         df, okved_list = load_suppliers()
         if df is not None:
             st.session_state.suppliers_df = df
             st.success(f"✅ Загружено {len(df)} поставщиков")
         else:
-            st.error("❌ Ошибка при загрузке файла поставщиков")
+            st.error("❌ Ошибка при загрузке данных поставщиков")
 
     # Фильтрация поставщиков по ОКВЭД
     if st.session_state.suppliers_df is not None:
@@ -614,19 +618,18 @@ def display_supplier_gui():
     # Функция для загрузки поставщиков из CSV файла
     def load_suppliers():
         try:
-            # Используем Streamlit для загрузки файла
-            uploaded_file = st.file_uploader(
-                "Загрузите файл базы данных (CSV)",
-                type=["csv"],
-                help="Выберите CSV файл с данными поставщиков"
-            )
-
-            if uploaded_file is None:
-                st.warning("⚠️ Файл не выбран. Пожалуйста, загрузите файл базы данных.")
+            # Получаем ссылку на Google Drive из secrets
+            try:
+                google_drive_url = st.secrets["GOOGLE_DRIVE_SUPPLIERS_URL"]
+            except KeyError:
+                st.error("❌ Не найден GOOGLE_DRIVE_SUPPLIERS_URL в настройках secrets.toml")
+                st.info("💡 Добавьте GOOGLE_DRIVE_SUPPLIERS_URL = 'ваша-ссылка' в файл .streamlit/secrets.toml")
                 return None, []
-
-            # Читаем CSV файл
-            df = pd.read_csv(uploaded_file)
+            
+            st.info("📥 Загружаем данные поставщиков с Google Drive...")
+            
+            # Читаем CSV файл напрямую с Google Drive
+            df = pd.read_csv(google_drive_url)
             df = df.fillna('')  # Заполняем пустые значения
 
             # Извлечение координат
@@ -635,7 +638,7 @@ def display_supplier_gui():
 
             # Парсинг координат из столбца "Координаты"
             for idx, row in df.iterrows():
-                if row['Координаты'] and isinstance(row['Координаты'], str):
+                if 'Координаты' in row and row['Координаты'] and isinstance(row['Координаты'], str):
                     try:
                         lat, lon = map(float, row['Координаты'].split(','))
                         df.at[idx, 'lat'] = lat
@@ -651,12 +654,14 @@ def display_supplier_gui():
             okved_list = [x for x in okved_list if x]
             okved_list.sort()
 
-            log_info(st.session_state, f"Загружено {len(df)} поставщиков из CSV файла")
+            log_info(st.session_state, f"Загружено {len(df)} поставщиков с Google Drive")
+            st.success(f"✅ Успешно загружено {len(df)} поставщиков с Google Drive!")
 
             return df, okved_list
         except Exception as e:
-            log_error(st.session_state, f"Ошибка при загрузке CSV файла: {str(e)}")
-            st.error(f"❌ Ошибка при загрузке файла: {str(e)}")
+            log_error(st.session_state, f"Ошибка при загрузке CSV файла с Google Drive: {str(e)}")
+            st.error(f"❌ Ошибка при загрузке файла с Google Drive: {str(e)}")
+            st.error("Проверьте доступность ссылки и подключение к интернету.")
             return None, []
 
     # Обработчик выбора поставщика на карте
@@ -787,13 +792,13 @@ def display_supplier_gui():
         # Загрузка данных поставщиков
         st.header("2.Загрузите данные поставщиков")
 
-        if st.button("📂 Загрузить CSV файл поставщиков"):
+        if st.button("📂 Загрузить данные поставщиков с Google Drive"):
             df, okved_list = load_suppliers()
             if df is not None:
                 st.session_state.suppliers_df = df
                 st.success(f"✅ Загружено {len(df)} поставщиков")
             else:
-                st.error("❌ Ошибка при загрузке файла поставщиков")
+                st.error("❌ Ошибка при загрузке данных поставщиков")
 
         # Фильтрация поставщиков по ОКВЭД
         if st.session_state.suppliers_df is not None:
