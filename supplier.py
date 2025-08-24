@@ -28,9 +28,14 @@ if 'ors_api_key' not in st.session_state:
     st.session_state.ors_api_key = ""
     # Пробуем получить API ключ из secrets
     try:
-        if 'api_keys' in st.secrets and 'ors_api_key' in st.secrets['api_keys']:
+        # Сначала пробуем получить из корня
+        if 'ORS_API_KEY' in st.secrets:
+            st.session_state.ors_api_key = st.secrets['ORS_API_KEY']
+            log_info(st.session_state, "API ключ получен из secrets (корень)")
+        # Если нет, пробуем из секции api_keys
+        elif 'api_keys' in st.secrets and 'ors_api_key' in st.secrets['api_keys']:
             st.session_state.ors_api_key = st.secrets['api_keys']['ors_api_key']
-            log_info(st.session_state, "API ключ получен из secrets")
+            log_info(st.session_state, "API ключ получен из secrets (api_keys)")
     except Exception as e:
         log_warning(st.session_state, "Не удалось получить API ключ из secrets")
 
@@ -376,22 +381,44 @@ with col2:
             # Добавляем маршрут
             route_coords = supplier['Маршрут']
             if route_coords:
+                # Расчет времени в пути (средняя скорость 60 км/ч)
+                distance = supplier['Расстояние']
+                travel_time_hours = distance / 60 if distance > 0 else 0
+                hours = int(travel_time_hours)
+                minutes = int((travel_time_hours - hours) * 60)
+                
+                if hours > 0:
+                    time_str = f"{hours}ч {minutes}мин"
+                else:
+                    time_str = f"{minutes}мин"
+                
                 folium.PolyLine(
                     locations=route_coords,
                     weight=5,
                     color=supplier.get('Цвет', color),
                     opacity=0.8,
-                    tooltip=f"{supplier['ОКВЭД']} → {supplier['Расстояние']} км (по дорогам)"
+                    tooltip=f"{supplier['ОКВЭД']} → {supplier['Расстояние']} км (по дорогам) - {time_str}"
                 ).add_to(m)
             else:
                 # Резерв — прямая линия, если маршрут не определен
+                # Расчет времени в пути (средняя скорость 60 км/ч)
+                distance = supplier['Расстояние']
+                travel_time_hours = distance / 60 if distance > 0 else 0
+                hours = int(travel_time_hours)
+                minutes = int((travel_time_hours - hours) * 60)
+                
+                if hours > 0:
+                    time_str = f"{hours}ч {minutes}мин"
+                else:
+                    time_str = f"{minutes}мин"
+                
                 folium.PolyLine(
                     locations=[sup_coords, st.session_state.object_coords],
                     weight=3,
                     color=color,
                     dash_array="10",
                     opacity=0.6,
-                    tooltip=f"{supplier['ОКВЭД']} → {supplier['Расстояние']} км (по прямой)"
+                    tooltip=f"{supplier['ОКВЭД']} → {supplier['Расстояние']} км (по прямой) - {time_str}"
                 ).add_to(m)
 
         # Отображаем карту с обработкой кликов
@@ -512,13 +539,25 @@ if st.session_state.delivery_data:
 
                 # Добавляем маршрут (по дорогам или по прямой)
                 route_coords = supplier.get('Маршрут')
+                distance = supplier.get('Расстояние', 0)
+                
+                # Расчет времени в пути (средняя скорость 60 км/ч)
+                travel_time_hours = distance / 60 if distance > 0 else 0
+                hours = int(travel_time_hours)
+                minutes = int((travel_time_hours - hours) * 60)
+                
+                if hours > 0:
+                    time_str = f"{hours}ч {minutes}мин"
+                else:
+                    time_str = f"{minutes}мин"
+                
                 if route_coords:
                     folium.PolyLine(
                         locations=route_coords,
                         weight=5,
                         color=color,
                         opacity=0.8,
-                        tooltip=f"{supplier['ОКВЭД']} → {supplier['Расстояние']} км (по дорогам)"
+                        tooltip=f"{supplier['ОКВЭД']} → {distance} км (по дорогам) - {time_str}"
                     ).add_to(m_export)
                 else:
                     folium.PolyLine(
@@ -527,7 +566,7 @@ if st.session_state.delivery_data:
                         color=color,
                         dash_array="10",
                         opacity=0.6,
-                        tooltip=f"{supplier['ОКВЭД']} → {supplier['Расстояние']} км (по прямой)"
+                        tooltip=f"{supplier['ОКВЭД']} → {distance} км (по прямой) - {time_str}"
                     ).add_to(m_export)
 
             # Получаем HTML карты
@@ -583,9 +622,14 @@ def display_supplier_gui():
         st.session_state.ors_api_key = ""
         # Пробуем получить API ключ из secrets
         try:
-            if 'api_keys' in st.secrets and 'ors_api_key' in st.secrets['api_keys']:
+            # Сначала пробуем получить из корня
+            if 'ORS_API_KEY' in st.secrets:
+                st.session_state.ors_api_key = st.secrets['ORS_API_KEY']
+                log_info(st.session_state, "API ключ получен из secrets (корень)")
+            # Если нет, пробуем из секции api_keys
+            elif 'api_keys' in st.secrets and 'ors_api_key' in st.secrets['api_keys']:
                 st.session_state.ors_api_key = st.secrets['api_keys']['ors_api_key']
-                log_info(st.session_state, "API ключ получен из secrets")
+                log_info(st.session_state, "API ключ получен из secrets (api_keys)")
         except Exception as e:
             log_warning(st.session_state, "Не удалось получить API ключ из secrets")
 
