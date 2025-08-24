@@ -381,11 +381,11 @@ with col2:
             # Добавляем маршрут
             route_coords = supplier['Маршрут']
             if route_coords:
-                # Расчет времени в пути (средняя скорость 60 км/ч)
+                # Расчет времени в пути (средняя скорость 40 км/ч)
                 distance = supplier['Расстояние']
-                travel_time_hours = distance / 60 if distance > 0 else 0
+                travel_time_hours = distance / 40 if distance > 0 else 0
                 hours = int(travel_time_hours)
-                minutes = int((travel_time_hours - hours) * 60)
+                minutes = int((travel_time_hours - hours) * 40)
                 
                 if hours > 0:
                     time_str = f"{hours}ч {minutes}мин"
@@ -401,11 +401,11 @@ with col2:
                 ).add_to(m)
             else:
                 # Резерв — прямая линия, если маршрут не определен
-                # Расчет времени в пути (средняя скорость 60 км/ч)
+                # Расчет времени в пути (средняя скорость 40 км/ч)
                 distance = supplier['Расстояние']
-                travel_time_hours = distance / 60 if distance > 0 else 0
+                travel_time_hours = distance / 40 if distance > 0 else 0
                 hours = int(travel_time_hours)
-                minutes = int((travel_time_hours - hours) * 60)
+                minutes = int((travel_time_hours - hours) * 40)
                 
                 if hours > 0:
                     time_str = f"{hours}ч {minutes}мин"
